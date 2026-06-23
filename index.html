@@ -890,7 +890,7 @@ body {
       <div class="wish-form" id="wish-form">
         <input class="wish-input" id="wish-name" type="text" placeholder="Your name 😊" maxlength="50"/>
         <textarea class="wish-textarea" id="wish-msg" placeholder="Write your birthday wish here... ✨" maxlength="300"></textarea>
-        <button class="wish-submit-btn" onclick="submitWish()">Send Wish ❤️</button>
+        <button class="wish-submit-btn" id="wish-submit-btn">Send Wish ❤️</button>
       </div>
 
       <!-- Cards -->
@@ -917,17 +917,21 @@ body {
   <!-- Browser-compatible tone using Web Audio API fallback below -->
 </audio>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
 /* ============================================================
-   ██████╗  ██████╗  ███╗   ██╗███████╗██╗ ██████╗
-   ██╔════╝██╔═══██╗ ████╗  ██║██╔════╝██║██╔════╝
-   ██║     ██║   ██║ ██╔██╗ ██║█████╗  ██║██║  ███╗
-   ██║     ██║   ██║ ██║╚██╗██║██╔══╝  ██║██║   ██║
-   ╚██████╗╚██████╔╝ ██║ ╚████║██║     ██║╚██████╔╝
-    ╚═════╝ ╚═════╝  ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝
+    ██████╗  ██████╗  ███╗   ██╗███████╗██╗ ██████╗
+    ██╔════╝██╔═══██╗ ████╗  ██║██╔════╝██║██╔════╝
+    ██║     ██║   ██║ ██╔██╗ ██║█████╗  ██║██║  ███╗
+    ██║     ██║   ██║ ██║╚██╗██║██╔══╝  ██║██║   ██║
+    ╚██████╗╚██████╔╝ ██║ ╚████║██║     ██║╚██████╔╝
+     ╚═════╝ ╚═════╝  ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝
 
-   MIDNIGHT BIRTHDAY VAULT
-   ============================================================ */
+    MIDNIGHT BIRTHDAY VAULT
+    ============================================================ */
 
 /* ============================================================
    🔧 CONFIGURATION — Edit this section to customise
@@ -947,6 +951,21 @@ const CONFIG = {
 /* ============================================================
    END CONFIGURATION
    ============================================================ */
+
+// Initialize Firebase
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyAVf5akxDmQcgZPv9x7biCyXAZDIocQR_I",
+    authDomain: "birthday-countdown-cfe83.firebaseapp.com",
+    databaseURL: "https://birthday-countdown-cfe83-default-rtdb.firebaseio.com",
+    projectId: "birthday-countdown-cfe83",
+    storageBucket: "birthday-countdown-cfe83.firebasestorage.app",
+    messagingSenderId: "775693984282",
+    appId: "1:775693984282:web:9fac559d9912f90b0427a3"
+  });
+} catch(e) {
+  console.error('Firebase init error:', e);
+}
 
 // Inject config into DOM
 document.getElementById('hero-name').textContent = CONFIG.sisterName;
@@ -1284,66 +1303,96 @@ function toggleMusic() {
 }
 
 /* ============================================================
-   WISH WALL — LocalStorage
+   WISH WALL — with Firebase sync
    ============================================================ */
-const STORAGE_KEY = 'birthdayVault_wishes_v1';
 
-function loadWishes() {
-  const wishes = getWishes();
-  renderWishes(wishes);
-  updateCounter(wishes.length);
-}
+let allWishes = [];
 
-function getWishes() {
+// Try loading saved wishes from localStorage as fallback
+try {
+  const saved = localStorage.getItem('birthday_wishes');
+  if (saved) {
+    allWishes = JSON.parse(saved);
+    renderWishes(allWishes);
+    updateCounter(allWishes.length);
+  }
+} catch(e) {}
+
+// If Firebase is available, use it for sync
+if (typeof firebase !== 'undefined' && firebase.database) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch { return []; }
+    const db = firebase.database();
+    const wishesRef = db.ref('wishes');
+
+    // Load initial data from Firebase
+    wishesRef.once('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        allWishes = Object.keys(data).map(key => ({ ...data[key], fbKey: key }));
+        allWishes.reverse();
+        renderWishes(allWishes);
+        updateCounter(allWishes.length);
+        // Save to localStorage as backup
+        localStorage.setItem('birthday_wishes', JSON.stringify(allWishes));
+      }
+    });
+
+    window._submitWishToFirebase = function(wish) {
+      wishesRef.push(wish);
+    };
+  } catch(e) {}
 }
 
-function saveWishes(wishes) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(wishes));
-}
+function loadWishes() {}
 
 function submitWish() {
   const nameEl = document.getElementById('wish-name');
   const msgEl  = document.getElementById('wish-msg');
-  const name   = nameEl.value.trim();
-  const msg    = msgEl.value.trim();
+  const name   = nameEl ? nameEl.value.trim() : '';
+  const msg    = msgEl ? msgEl.value.trim() : '';
 
-  if (!name) { showToast('Please enter your name 💕'); nameEl.focus(); return; }
-  if (!msg)  { showToast('Please write your wish 💌'); msgEl.focus();  return; }
+  if (!name) { showToast('Please enter your name 💕'); if(nameEl) nameEl.focus(); return; }
+  if (!msg)  { showToast('Please write your wish 💌'); if(msgEl) msgEl.focus();  return; }
 
-  const wishes = getWishes();
-  wishes.unshift({
-    id   : Date.now(),
+  const newWish = {
     name,
     msg,
-    time : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-  });
-  saveWishes(wishes);
+    time: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  };
 
-  nameEl.value = '';
-  msgEl.value  = '';
+  allWishes.unshift(newWish);
+  renderWishes(allWishes);
+  updateCounter(allWishes.length);
+  localStorage.setItem('birthday_wishes', JSON.stringify(allWishes));
 
-  renderWishes(wishes);
-  updateCounter(wishes.length);
+  if (typeof window._submitWishToFirebase === 'function') {
+    window._submitWishToFirebase(newWish);
+  }
+
   showToast('Wish sent! 🎉❤️');
   spawnBalloon(); spawnBalloon(); spawnBalloon();
+
+  if (nameEl) nameEl.value = '';
+  if (msgEl) msgEl.value = '';
+  if (nameEl) nameEl.focus();
 }
 
+// Attach submit handler
+document.getElementById('wish-submit-btn').onclick = submitWish;
+
 const AVATAR_EMOJIS = ['🌸','🌺','💐','🌻','🦋','🌈','⭐','🌙','🎀','🍀'];
+const emptyEl = document.getElementById('wishes-empty');
 
 function renderWishes(wishes) {
-  const grid  = document.getElementById('wish-grid');
-  const empty = document.getElementById('wishes-empty');
+  const grid = document.getElementById('wish-grid');
 
   if (wishes.length === 0) {
     grid.innerHTML = '';
-    grid.appendChild(empty);
-    empty.style.display = 'block';
+    grid.appendChild(emptyEl);
+    emptyEl.style.display = 'block';
     return;
   }
-  empty.style.display = 'none';
+  emptyEl.style.display = 'none';
   grid.innerHTML = wishes.map((w, i) => `
     <div class="wish-card" style="animation-delay:${Math.min(i,8)*0.07}s">
       <div class="wish-card-header">
