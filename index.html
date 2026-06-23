@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>🎁 Midnight Birthday Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CONFIGURATION & CSS CUSTOM PROPERTIES
+   ============================================================ */
+:root {
+  --midnight: #0a0a1a;
+  --deep-purple: #12103a;
+  --vault-purple: #2d1b69;
+  --violet: #4a2c8f;
+  --rose-gold: #e8a0bf;
+  --champagne: #f7e7ce;
+  --gold: #ffd700;
+  --soft-gold: #ffcc44;
+  --white: #ffffff;
+  --pink-soft: #ff9ec7;
+  --text-muted: rgba(255,255,255,0.55);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--midnight);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   STARS CANVAS
+   ============================================================ */
+#stars-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   LOCK SCREEN
+   ============================================================ */
+#lock-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 0%, #2d1b69 0%, #12103a 40%, #0a0a1a 100%);
+  z-index: 100;
+  padding: 2rem 1rem;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+#lock-screen.unlocking {
+  animation: vaultOpen 1.2s ease forwards;
+}
+
+@keyframes vaultOpen {
+  0%   { opacity: 1; transform: scale(1); }
+  40%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 0; transform: scale(1.1); pointer-events: none; }
+}
+
+/* Vault Icon */
+.vault-icon-wrap {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.vault-icon {
+  font-size: clamp(5rem, 15vw, 8rem);
+  display: block;
+  filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
+  animation: floatIcon 3s ease-in-out infinite;
+  transition: transform 0.3s ease;
+  cursor: default;
+  user-select: none;
+}
+
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%       { transform: translateY(-14px) rotate(2deg); }
+}
+
+.vault-icon.popping {
+  animation: giftPop 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+}
+
+@keyframes giftPop {
+  0%   { transform: scale(1) rotate(0deg); }
+  25%  { transform: scale(1.3) rotate(-10deg); }
+  50%  { transform: scale(0.9) rotate(8deg); }
+  75%  { transform: scale(1.15) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Glow ring around icon */
+.vault-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 70%);
+  animation: pulseGlow 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+  50%       { transform: translate(-50%,-50%) scale(1.4); opacity: 1; }
+}
+
+/* Lock Screen Typography */
+.lock-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 900;
+  text-align: center;
+  background: linear-gradient(135deg, #ffd700, #ffcc44, #e8a0bf);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.lock-subtitle {
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+  color: var(--text-muted);
+  text-align: center;
+  font-style: italic;
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.03em;
+}
+
+/* Countdown Timer */
+.countdown-wrap {
+  display: flex;
+  gap: clamp(0.8rem, 2.5vw, 1.5rem);
+  margin-bottom: 2rem;
+}
+
+.countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 16px;
+  padding: clamp(0.8rem, 2vw, 1.2rem) clamp(1rem, 2.5vw, 1.6rem);
+  backdrop-filter: blur(10px);
+  min-width: clamp(64px, 16vw, 90px);
+  transition: border-color 0.3s;
+}
+
+.countdown-unit:hover {
+  border-color: rgba(255,215,0,0.5);
+}
+
+.countdown-num {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  min-width: 2ch;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.countdown-num.tick {
+  animation: tickAnim 0.2s ease;
+}
+
+@keyframes tickAnim {
+  0%   { transform: translateY(-6px); opacity: 0.5; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.countdown-label {
+  font-size: clamp(0.55rem, 1.5vw, 0.7rem);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-top: 0.35rem;
+  font-weight: 500;
+}
+
+.lock-hint {
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
+  color: rgba(255,215,0,0.6);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+/* Separators between countdown units */
+.countdown-sep {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  color: rgba(255,215,0,0.3);
+  align-self: center;
+  margin-bottom: 1.4rem;
+  font-weight: 300;
+}
+
+/* ============================================================
+   CELEBRATION PAGE
+   ============================================================ */
+#celebration-page {
+  display: none;
+  min-height: 100vh;
+  position: relative;
+  z-index: 10;
+}
+
+#celebration-page.visible {
+  display: block;
+}
+
+/* Hero Section */
+.hero {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% -10%, #5a1a5e 0%, #2d1b69 30%, #0a0a1a 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(232,160,191,0.03) 60deg, transparent 120deg, rgba(255,215,0,0.03) 180deg, transparent 240deg, rgba(255,160,200,0.03) 300deg, transparent 360deg);
+  animation: rotateBg 20s linear infinite;
+}
+
+@keyframes rotateBg {
+  to { transform: rotate(360deg); }
+}
+
+.hero-emoji-row {
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  margin-bottom: 1rem;
+  animation: fadeSlideUp 0.8s ease 0.3s both;
+  letter-spacing: 0.1em;
+}
+
+.hero-name {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 7vw, 5rem);
+  font-weight: 900;
+  font-style: italic;
+  background: linear-gradient(135deg, #ffd700 0%, #ffcc44 30%, #ff9ec7 60%, #e8a0bf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+  animation: fadeSlideUp 0.8s ease 0.5s both;
+}
+
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.4rem, 4vw, 2.8rem);
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.08em;
+  animation: fadeSlideUp 0.8s ease 0.7s both;
+}
+
+.hero-subtitle {
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+  color: rgba(255,255,255,0.7);
+  font-style: italic;
+  font-family: 'Playfair Display', serif;
+  max-width: 520px;
+  line-height: 1.7;
+  animation: fadeSlideUp 0.8s ease 0.9s both;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Animated Cake */
+.cake-wrap {
+  margin: 2.5rem auto 1rem;
+  animation: fadeSlideUp 0.8s ease 1.1s both;
+  position: relative;
+}
+
+.cake-svg {
+  width: clamp(140px, 35vw, 220px);
+  filter: drop-shadow(0 10px 30px rgba(232,160,191,0.4));
+}
+
+/* Flame animations */
+.flame { transform-origin: 50% 100%; }
+.flame-1 { animation: flicker 0.9s ease-in-out infinite alternate; }
+.flame-2 { animation: flicker 1.1s ease-in-out 0.2s infinite alternate; }
+.flame-3 { animation: flicker 0.8s ease-in-out 0.4s infinite alternate; }
+
+@keyframes flicker {
+  0%   { transform: scaleX(1) scaleY(1) rotate(-3deg); }
+  100% { transform: scaleX(0.85) scaleY(1.15) rotate(3deg); }
+}
+
+/* Music Button */
+.music-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,215,0,0.35);
+  color: var(--gold);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.6rem 1.4rem;
+  border-radius: 50px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  margin-top: 1.5rem;
+  animation: fadeSlideUp 0.8s ease 1.3s both;
+  letter-spacing: 0.04em;
+}
+
+.music-btn:hover {
+  background: rgba(255,215,0,0.12);
+  border-color: rgba(255,215,0,0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255,215,0,0.2);
+}
+
+.music-note { font-size: 1.1rem; }
+
+/* ============================================================
+   SECTIONS SHARED
+   ============================================================ */
+.section {
+  padding: clamp(3rem, 8vw, 6rem) clamp(1.2rem, 5vw, 2rem);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.section-eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rose-gold);
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  display: block;
+}
+
+.section-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+  font-weight: 900;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+/* ============================================================
+   SPECIAL MESSAGE SECTION
+   ============================================================ */
+.special-msg-wrap {
+  background: radial-gradient(ellipse at 50% 0%, #2d1b69 0%, #12103a 100%);
+  padding: 0;
+}
+
+.special-msg-inner {
+  text-align: center;
+}
+
+.special-msg-inner .section-heading {
+  background: linear-gradient(135deg, #ffd700, #e8a0bf);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.special-quote {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+  font-style: italic;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.85;
+  max-width: 640px;
+  margin: 0 auto 1.5rem;
+  position: relative;
+  padding: 2rem 2rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,215,0,0.12);
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.special-quote::before {
+  content: '\201C';
+  font-size: 5rem;
+  color: rgba(255,215,0,0.15);
+  position: absolute;
+  top: -0.5rem; left: 0.8rem;
+  font-family: 'Playfair Display', serif;
+  line-height: 1;
+}
+
+.special-quote-sig {
+  color: var(--rose-gold);
+  font-size: 0.85rem;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin-top: 1rem;
+  display: block;
+}
+
+/* ============================================================
+   WISH WALL
+   ============================================================ */
+.wish-wall-wrap {
+  background: #080818;
+}
+
+.wish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 560px;
+  margin: 0 auto 3rem;
+}
+
+.wish-input, .wish-textarea {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  padding: 0.85rem 1.1rem;
+  resize: none;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  width: 100%;
+}
+
+.wish-input::placeholder, .wish-textarea::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.wish-input:focus, .wish-textarea:focus {
+  border-color: rgba(232,160,191,0.5);
+  box-shadow: 0 0 0 3px rgba(232,160,191,0.08);
+}
+
+.wish-textarea { min-height: 110px; }
+
+.wish-submit-btn {
+  background: linear-gradient(135deg, #e8a0bf, #c8709f);
+  border: none;
+  border-radius: 12px;
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.9rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.04em;
+}
+
+.wish-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(232,160,191,0.35);
+}
+
+.wish-submit-btn:active {
+  transform: translateY(0);
+}
+
+/* Love Counter */
+.love-counter {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding: 1.4rem 2rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(232,160,191,0.2);
+  border-radius: 16px;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2.5rem;
+}
+
+.love-counter-num {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.5rem, 7vw, 3.5rem);
+  font-weight: 900;
+  color: var(--rose-gold);
+  display: block;
+  line-height: 1;
+}
+
+.love-counter-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 0.4rem;
+  display: block;
+}
+
+/* Wish Cards Grid */
+.wish-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 1.2rem;
+}
+
+.wish-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 1.4rem;
+  backdrop-filter: blur(8px);
+  transition: transform 0.3s ease, border-color 0.3s;
+  animation: cardIn 0.4s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.wish-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, #e8a0bf, #ffd700);
+  opacity: 0.6;
+}
+
+.wish-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(232,160,191,0.25);
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wish-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.wish-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e8a0bf, #9b59b6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.wish-sender-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--rose-gold);
+}
+
+.wish-heart {
+  margin-left: auto;
+  font-size: 1.1rem;
+  animation: heartBeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.2); }
+}
+
+.wish-text {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.65;
+  font-style: italic;
+}
+
+.wishes-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 2rem;
+  font-family: 'Playfair Display', serif;
+}
+
+/* ============================================================
+   FLOATING BALLOONS & HEARTS
+   ============================================================ */
+.floater {
+  position: fixed;
+  pointer-events: none;
+  z-index: 5;
+  animation-timing-function: ease-in-out;
+}
+
+.balloon {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  animation: riseUp linear forwards;
+}
+
+@keyframes riseUp {
+  0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.9; }
+  50%  { transform: translateY(-45vh) translateX(var(--drift)) rotate(8deg); opacity: 0.9; }
+  100% { transform: translateY(-105vh) translateX(calc(var(--drift) * 1.5)) rotate(-5deg); opacity: 0; }
+}
+
+.heart-floater {
+  font-size: clamp(1rem, 2.5vw, 1.6rem);
+  animation: riseHeart linear forwards;
+}
+
+@keyframes riseHeart {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-110vh) scale(0.5) rotate(var(--spin)); opacity: 0; }
+}
+
+/* ============================================================
+   CONFETTI CANVAS
+   ============================================================ */
+#confetti-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 200;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: #04040f;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.footer span { color: #ff6b8a; }
+
+/* ============================================================
+   SCROLL ANIMATIONS
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+  .countdown-wrap { gap: 0.5rem; }
+  .countdown-sep { display: none; }
+  .countdown-unit { min-width: 60px; padding: 0.7rem 0.8rem; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #080818; }
+::-webkit-scrollbar-thumb { background: rgba(232,160,191,0.3); border-radius: 3px; }
+
+/* ============================================================
+   SPARKLE EFFECTS
+   ============================================================ */
+.sparkle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 201;
+  font-size: 1.2rem;
+  animation: sparkleFade 1.2s ease forwards;
+}
+
+@keyframes sparkleFade {
+  0%   { opacity: 1; transform: scale(0) rotate(0deg); }
+  40%  { opacity: 1; transform: scale(1.4) rotate(45deg); }
+  100% { opacity: 0; transform: scale(0.6) rotate(90deg) translateY(-30px); }
+}
+
+/* Notification toast */
+.toast {
+  position: fixed;
+  bottom: 2rem; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: linear-gradient(135deg, #2d1b69, #4a2c8f);
+  border: 1px solid rgba(232,160,191,0.3);
+  color: #fff;
+  padding: 0.8rem 1.6rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 999;
+  backdrop-filter: blur(10px);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+</head>
+<body>
+
+<!-- Stars Background -->
+<canvas id="stars-canvas"></canvas>
+<!-- Confetti Canvas -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ============================================================
+     LOCK SCREEN
+     ============================================================ -->
+<div id="lock-screen">
+  <div class="vault-icon-wrap">
+    <div class="vault-glow"></div>
+    <span class="vault-icon" id="vault-icon">🎁</span>
+  </div>
+  <h1 class="lock-title">🔒 Birthday Vault Locked</h1>
+  <p class="lock-subtitle">A special surprise is waiting...</p>
+  <div class="countdown-wrap">
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-days">00</span>
+      <span class="countdown-label">Days</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-hours">00</span>
+      <span class="countdown-label">Hours</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-mins">00</span>
+      <span class="countdown-label">Minutes</span>
+    </div>
+    <span class="countdown-sep">:</span>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-secs">00</span>
+      <span class="countdown-label">Seconds</span>
+    </div>
+  </div>
+  <p class="lock-hint">✨ The celebration will begin at 12:00 AM ✨</p>
+</div>
+
+<!-- ============================================================
+     CELEBRATION PAGE
+     ============================================================ -->
+<div id="celebration-page">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-emoji-row">🎊 🎉 🎈 🎂 🎁 🎈 🎉 🎊</div>
+    <div class="hero-title">HAPPY BIRTHDAY</div>
+    <div class="hero-name" id="hero-name">Fariha Taskeen</div>
+    <p class="hero-subtitle">Today we celebrate an amazing daughter, sister, cousin, and friend.</p>
+
+    <!-- Animated SVG Cake -->
+    <div class="cake-wrap">
+      <svg class="cake-svg" viewBox="0 0 220 240" xmlns="http://www.w3.org/2000/svg">
+        <!-- Plate shadow -->
+        <ellipse cx="110" cy="222" rx="75" ry="10" fill="rgba(0,0,0,0.3)"/>
+        <!-- Bottom tier -->
+        <rect x="30" y="160" width="160" height="55" rx="10" fill="#c94d8e"/>
+        <rect x="30" y="160" width="160" height="18" rx="10" fill="#e0609f"/>
+        <!-- Frosting drips bottom tier -->
+        <path d="M42,160 Q50,148 58,160 Q66,148 74,160 Q82,148 90,160 Q98,148 106,160 Q114,148 122,160 Q130,148 138,160 Q146,148 154,160 Q162,148 170,160 Q178,148 186,160" fill="none" stroke="#fce4ec" stroke-width="7" stroke-linecap="round"/>
+        <!-- Deco dots bottom -->
+        <circle cx="60" cy="182" r="5" fill="#ffd700"/>
+        <circle cx="85" cy="182" r="5" fill="#ff9ec7"/>
+        <circle cx="110" cy="182" r="5" fill="#ffd700"/>
+        <circle cx="135" cy="182" r="5" fill="#ff9ec7"/>
+        <circle cx="160" cy="182" r="5" fill="#ffd700"/>
+        <!-- Middle tier -->
+        <rect x="50" y="105" width="120" height="58" rx="9" fill="#a83880"/>
+        <rect x="50" y="105" width="120" height="16" rx="9" fill="#cc4d9f"/>
+        <!-- Frosting drips middle -->
+        <path d="M58,105 Q67,93 76,105 Q85,93 94,105 Q103,93 112,105 Q121,93 130,105 Q139,93 148,105 Q157,93 166,105" fill="none" stroke="#fce4ec" stroke-width="7" stroke-linecap="round"/>
+        <!-- Hearts on middle tier -->
+        <text x="82" y="138" font-size="18" text-anchor="middle">❤️</text>
+        <text x="110" y="138" font-size="18" text-anchor="middle">❤️</text>
+        <text x="138" y="138" font-size="18" text-anchor="middle">❤️</text>
+        <!-- Top tier -->
+        <rect x="72" y="58" width="76" height="50" rx="8" fill="#8b2252"/>
+        <rect x="72" y="58" width="76" height="14" rx="8" fill="#b03570"/>
+        <!-- Frosting drips top -->
+        <path d="M78,58 Q87,47 96,58 Q105,47 114,58 Q123,47 132,58 Q141,47 150,58" fill="none" stroke="#fce4ec" stroke-width="6" stroke-linecap="round"/>
+        <!-- Name plate on top tier -->
+        <rect x="82" y="70" width="56" height="22" rx="5" fill="rgba(255,255,255,0.15)"/>
+        <text x="110" y="86" font-size="9" fill="#ffd700" text-anchor="middle" font-family="Georgia, serif" font-weight="bold">Happy B'day</text>
+        <!-- Candles -->
+        <rect x="88" y="38" width="8" height="22" rx="4" fill="#ffd700"/>
+        <rect x="104" y="35" width="8" height="25" rx="4" fill="#ff9ec7"/>
+        <rect x="120" y="38" width="8" height="22" rx="4" fill="#a8e6cf"/>
+        <!-- Flames -->
+        <ellipse class="flame flame-1" cx="92" cy="36" rx="5" ry="7" fill="#ff6b00" opacity="0.9"/>
+        <ellipse class="flame flame-1" cx="92" cy="35" rx="3" ry="5" fill="#ffcc00"/>
+        <ellipse class="flame flame-2" cx="108" cy="33" rx="5" ry="7" fill="#ff6b00" opacity="0.9"/>
+        <ellipse class="flame flame-2" cx="108" cy="32" rx="3" ry="5" fill="#ffcc00"/>
+        <ellipse class="flame flame-3" cx="124" cy="36" rx="5" ry="7" fill="#ff6b00" opacity="0.9"/>
+        <ellipse class="flame flame-3" cx="124" cy="35" rx="3" ry="5" fill="#ffcc00"/>
+        <!-- Glow under flames -->
+        <ellipse cx="92" cy="41" rx="8" ry="3" fill="rgba(255,200,0,0.3)"/>
+        <ellipse cx="108" cy="39" rx="8" ry="3" fill="rgba(255,200,0,0.3)"/>
+        <ellipse cx="124" cy="41" rx="8" ry="3" fill="rgba(255,200,0,0.3)"/>
+      </svg>
+    </div>
+
+    <!-- Music Button -->
+    <button class="music-btn" id="music-btn" onclick="toggleMusic()">
+      <span class="music-note" id="music-icon">🎵</span>
+      <span id="music-text">Play Birthday Music</span>
+    </button>
+  </section>
+
+  <!-- SPECIAL MESSAGE -->
+  <div class="special-msg-wrap">
+    <div class="section special-msg-inner reveal">
+      <span class="section-eyebrow">A message from the heart</span>
+      <h2 class="section-heading">To the most wonderful sister 💖</h2>
+      <div class="special-quote" id="special-message-text">
+        To the most wonderful sister,<br>
+        May your life always be filled with happiness,<br>
+        success, good health, and beautiful memories.<br>
+        You are deeply loved by your family.<br>
+        <span class="special-quote-sig">— Made with ❤️ by Your Brother</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- WISH WALL -->
+  <div class="wish-wall-wrap">
+    <div class="section reveal">
+      <span class="section-eyebrow">Family Wish Wall</span>
+      <h2 class="section-heading">Send your birthday wishes 💌</h2>
+
+      <!-- Love Counter -->
+      <div class="love-counter">
+        <span class="countdown-num love-counter-num" id="wish-count">0</span>
+        <span class="love-counter-label">Total Wishes Received ❤️</span>
+      </div>
+
+      <!-- Form -->
+      <div class="wish-form" id="wish-form">
+        <input class="wish-input" id="wish-name" type="text" placeholder="Your name 😊" maxlength="50"/>
+        <textarea class="wish-textarea" id="wish-msg" placeholder="Write your birthday wish here... ✨" maxlength="300"></textarea>
+        <button class="wish-submit-btn" onclick="submitWish()">Send Wish ❤️</button>
+      </div>
+
+      <!-- Cards -->
+      <div class="wish-grid" id="wish-grid">
+        <div class="wishes-empty" id="wishes-empty">
+          No wishes yet — be the first to send love! 💕
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    Made with <span>❤️</span> by Your Brother &nbsp;|&nbsp; 🎂 Happy Birthday Fariha Taskeen 🎂
+  </footer>
+
+</div><!-- /celebration-page -->
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden audio player -->
+<audio id="birthday-audio" loop>
+  <!-- Browser-compatible tone using Web Audio API fallback below -->
+</audio>
+
+<script>
+/* ============================================================
+   ██████╗  ██████╗  ███╗   ██╗███████╗██╗ ██████╗
+   ██╔════╝██╔═══██╗ ████╗  ██║██╔════╝██║██╔════╝
+   ██║     ██║   ██║ ██╔██╗ ██║█████╗  ██║██║  ███╗
+   ██║     ██║   ██║ ██║╚██╗██║██╔══╝  ██║██║   ██║
+   ╚██████╗╚██████╔╝ ██║ ╚████║██║     ██║╚██████╔╝
+    ╚═════╝ ╚═════╝  ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝
+
+   MIDNIGHT BIRTHDAY VAULT
+   ============================================================ */
+
+/* ============================================================
+   🔧 CONFIGURATION — Edit this section to customise
+   ============================================================ */
+const CONFIG = {
+  sisterName    : "Fariha Taskeen",           // Name shown on celebration page
+  birthdayDate  : "2026-06-24",               // Format: YYYY-MM-DD  ← CHANGE THIS
+  birthdayTime  : "00:00:00",                 // Unlock time (default midnight)
+  customMessage : `To the most wonderful sister,<br>
+    May your life always be filled with happiness,<br>
+    success, good health, and beautiful memories.<br>
+    You are deeply loved by your family.`,
+  brotherName   : "Your Brother",             // Shown in footer & message signature
+  // To unlock immediately for testing, set forceUnlock to true:
+  forceUnlock   : true,
+};
+/* ============================================================
+   END CONFIGURATION
+   ============================================================ */
+
+// Inject config into DOM
+document.getElementById('hero-name').textContent = CONFIG.sisterName;
+document.getElementById('special-message-text').innerHTML =
+  CONFIG.customMessage + `<span class="special-quote-sig">— Made with ❤️ by ${CONFIG.brotherName}</span>`;
+document.querySelector('.footer').innerHTML =
+  `Made with <span>❤️</span> by ${CONFIG.brotherName} &nbsp;|&nbsp; 🎂 Happy Birthday ${CONFIG.sisterName} 🎂`;
+
+// Compute unlock timestamp
+const [bYear, bMonth, bDay] = CONFIG.birthdayDate.split('-').map(Number);
+const [bH, bM, bS] = CONFIG.birthdayTime.split(':').map(Number);
+const UNLOCK_TIME = new Date(bYear, bMonth - 1, bDay, bH, bM, bS).getTime();
+
+/* ============================================================
+   STARS CANVAS
+   ============================================================ */
+(function initStars() {
+  const canvas = document.getElementById('stars-canvas');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = Array.from({ length: 180 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.6 + 0.2,
+      a: Math.random(),
+      speed: Math.random() * 0.008 + 0.003,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }
+
+  function draw(t) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      const alpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(s.phase + t * s.speed * 60));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(draw);
+})();
+
+/* ============================================================
+   COUNTDOWN
+   ============================================================ */
+let unlocked = false;
+const prevVals = { days: -1, hours: -1, mins: -1, secs: -1 };
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function animateTick(el) {
+  el.classList.remove('tick');
+  void el.offsetWidth;
+  el.classList.add('tick');
+}
+
+function updateCountdown() {
+  if (unlocked) return;
+
+  const now = Date.now();
+  const diff = UNLOCK_TIME - now;
+
+  if (diff <= 0 || CONFIG.forceUnlock) {
+    triggerUnlock();
+    return;
+  }
+
+  const totalSecs = Math.floor(diff / 1000);
+  const days  = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600);
+  const mins  = Math.floor((totalSecs % 3600) / 60);
+  const secs  = totalSecs % 60;
+
+  const elDays  = document.getElementById('cd-days');
+  const elHours = document.getElementById('cd-hours');
+  const elMins  = document.getElementById('cd-mins');
+  const elSecs  = document.getElementById('cd-secs');
+
+  if (days  !== prevVals.days)  { elDays.textContent  = pad(days);  animateTick(elDays);  prevVals.days  = days;  }
+  if (hours !== prevVals.hours) { elHours.textContent = pad(hours); animateTick(elHours); prevVals.hours = hours; }
+  if (mins  !== prevVals.mins)  { elMins.textContent  = pad(mins);  animateTick(elMins);  prevVals.mins  = mins;  }
+  if (secs  !== prevVals.secs)  { elSecs.textContent  = pad(secs);  animateTick(elSecs);  prevVals.secs  = secs;  }
+}
+
+// Run immediately (deferred) then every second
+setTimeout(updateCountdown, 50);
+setInterval(updateCountdown, 1000);
+
+/* ============================================================
+   UNLOCK SEQUENCE
+   ============================================================ */
+function triggerUnlock() {
+  if (unlocked) return;
+  unlocked = true;
+
+  // 1. Pop the gift icon
+  const icon = document.getElementById('vault-icon');
+  icon.classList.add('popping');
+  icon.textContent = '🎊';
+  setTimeout(() => { icon.textContent = '🎁'; }, 300);
+  setTimeout(() => { icon.textContent = '🎉'; }, 600);
+
+  // 2. Start confetti
+  startConfetti();
+
+  // 3. Start balloons & hearts
+  setTimeout(() => {
+    setInterval(spawnBalloon, 800);
+    setInterval(spawnHeart, 600);
+  }, 400);
+
+  // 4. Fade out lock screen
+  setTimeout(() => {
+    const ls = document.getElementById('lock-screen');
+    ls.classList.add('unlocking');
+    setTimeout(() => {
+      ls.style.display = 'none';
+      document.getElementById('celebration-page').classList.add('visible');
+      initScrollReveal();
+      loadWishes();
+    }, 1200);
+  }, 800);
+}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+let confettiRunning = false;
+const confettiCanvas = document.getElementById('confetti-canvas');
+const confettiCtx    = confettiCanvas.getContext('2d');
+let particles = [];
+
+const COLORS = ['#ffd700','#ff9ec7','#e8a0bf','#a8e6cf','#ff6b8a','#c7b8ea','#ffffff'];
+
+class ConfettiParticle {
+  constructor() { this.reset(true); }
+  reset(initial) {
+    this.x = Math.random() * confettiCanvas.width;
+    this.y = initial ? Math.random() * -confettiCanvas.height : -20;
+    this.w = Math.random() * 12 + 5;
+    this.h = Math.random() * 6 + 3;
+    this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    this.speedX = (Math.random() - 0.5) * 3;
+    this.speedY = Math.random() * 3 + 1.5;
+    this.angle  = Math.random() * Math.PI * 2;
+    this.spin   = (Math.random() - 0.5) * 0.18;
+    this.opacity = 1;
+  }
+  update() {
+    this.x     += this.speedX;
+    this.y     += this.speedY;
+    this.angle += this.spin;
+    if (this.y > confettiCanvas.height + 20) this.reset(false);
+  }
+  draw() {
+    confettiCtx.save();
+    confettiCtx.globalAlpha = this.opacity;
+    confettiCtx.translate(this.x, this.y);
+    confettiCtx.rotate(this.angle);
+    confettiCtx.fillStyle = this.color;
+    confettiCtx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
+    confettiCtx.restore();
+  }
+}
+
+function resizeConfetti() {
+  confettiCanvas.width  = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeConfetti);
+resizeConfetti();
+
+let confettiFrames = 0;
+function confettiLoop() {
+  if (!confettiRunning) {
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    return;
+  }
+  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  particles.forEach(p => { p.update(); p.draw(); });
+  confettiFrames++;
+  // Stop generating new ones after ~8 seconds but keep existing ones
+  if (confettiFrames > 480) {
+    // slow drain
+    particles = particles.filter(p => {
+      p.opacity -= 0.002;
+      return p.opacity > 0 && p.y < confettiCanvas.height + 20;
+    });
+    if (particles.length === 0) { confettiRunning = false; return; }
+  }
+  requestAnimationFrame(confettiLoop);
+}
+
+function startConfetti() {
+  confettiRunning = true;
+  confettiFrames  = 0;
+  particles = Array.from({ length: 160 }, () => new ConfettiParticle());
+  confettiLoop();
+}
+
+/* ============================================================
+   BALLOONS & HEARTS
+   ============================================================ */
+const BALLOONS = ['🎈','🎊','🎉','✨','🌟','💫'];
+const HEARTS   = ['❤️','💖','💕','💗','💞','🩷'];
+
+function spawnBalloon() {
+  const el = document.createElement('span');
+  el.className = 'floater balloon';
+  el.textContent = BALLOONS[Math.floor(Math.random() * BALLOONS.length)];
+  const drift = (Math.random() - 0.5) * 120;
+  el.style.cssText = `
+    left: ${Math.random() * 100}vw;
+    bottom: -50px;
+    --drift: ${drift}px;
+    animation-duration: ${Math.random() * 5 + 6}s;
+  `;
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+function spawnHeart() {
+  const el = document.createElement('span');
+  el.className = 'floater heart-floater';
+  el.textContent = HEARTS[Math.floor(Math.random() * HEARTS.length)];
+  const spin = (Math.random() - 0.5) * 60 + 'deg';
+  el.style.cssText = `
+    left: ${Math.random() * 100}vw;
+    bottom: -40px;
+    --spin: ${spin};
+    animation-duration: ${Math.random() * 4 + 5}s;
+  `;
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+/* ============================================================
+   SPARKLE ON CLICK (CELEBRATION PAGE)
+   ============================================================ */
+document.addEventListener('click', function(e) {
+  if (!unlocked) return;
+  const sparks = ['✨','⭐','💫','🌟','❤️'];
+  for (let i = 0; i < 3; i++) {
+    const el = document.createElement('span');
+    el.className = 'sparkle';
+    el.textContent = sparks[Math.floor(Math.random() * sparks.length)];
+    el.style.cssText = `
+      left: ${e.clientX + (Math.random()-0.5)*60}px;
+      top: ${e.clientY + (Math.random()-0.5)*60}px;
+    `;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+});
+
+/* ============================================================
+   MUSIC (Web Audio API — Happy Birthday melody)
+   ============================================================ */
+let audioCtx = null;
+let musicPlaying = false;
+let musicInterval = null;
+
+// Happy Birthday notes: C4 C4 D4 C4 F4 E4  |  C4 C4 D4 C4 G4 F4  |  C4 C4 C5 A4 F4 E4 D4  |  Bb4 Bb4 A4 F4 G4 F4
+const HB_NOTES = [
+  261.63, 261.63, 293.66, 261.63, 349.23, 329.63, 0,
+  261.63, 261.63, 293.66, 261.63, 392.00, 349.23, 0,
+  261.63, 261.63, 523.25, 440.00, 349.23, 329.63, 293.66, 0,
+  466.16, 466.16, 440.00, 349.23, 392.00, 349.23
+];
+const HB_DURS = [
+  0.4, 0.4, 0.8, 0.8, 0.8, 1.6, 0.3,
+  0.4, 0.4, 0.8, 0.8, 0.8, 1.6, 0.3,
+  0.4, 0.4, 0.8, 0.8, 0.8, 0.8, 1.2, 0.3,
+  0.4, 0.4, 0.8, 0.8, 0.8, 2.0
+];
+
+let noteIdx = 0;
+let noteTimer = null;
+
+function playNote(freq, dur) {
+  if (!audioCtx) return;
+  if (freq === 0) return;
+  const osc  = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.22, audioCtx.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur * 0.9);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + dur);
+}
+
+function scheduleNext() {
+  if (!musicPlaying) return;
+  const freq = HB_NOTES[noteIdx];
+  const dur  = HB_DURS[noteIdx];
+  playNote(freq, dur);
+  noteIdx = (noteIdx + 1) % HB_NOTES.length;
+  noteTimer = setTimeout(scheduleNext, dur * 1000);
+}
+
+function toggleMusic() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  musicPlaying = !musicPlaying;
+  const btn  = document.getElementById('music-btn');
+  const icon = document.getElementById('music-icon');
+  const txt  = document.getElementById('music-text');
+
+  if (musicPlaying) {
+    noteIdx = 0;
+    scheduleNext();
+    icon.textContent = '🎵';
+    txt.textContent  = 'Pause Birthday Music';
+    btn.style.background = 'rgba(255,215,0,0.15)';
+  } else {
+    clearTimeout(noteTimer);
+    icon.textContent = '🎶';
+    txt.textContent  = 'Play Birthday Music';
+    btn.style.background = '';
+  }
+}
+
+/* ============================================================
+   WISH WALL — LocalStorage
+   ============================================================ */
+const STORAGE_KEY = 'birthdayVault_wishes_v1';
+
+function loadWishes() {
+  const wishes = getWishes();
+  renderWishes(wishes);
+  updateCounter(wishes.length);
+}
+
+function getWishes() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveWishes(wishes) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(wishes));
+}
+
+function submitWish() {
+  const nameEl = document.getElementById('wish-name');
+  const msgEl  = document.getElementById('wish-msg');
+  const name   = nameEl.value.trim();
+  const msg    = msgEl.value.trim();
+
+  if (!name) { showToast('Please enter your name 💕'); nameEl.focus(); return; }
+  if (!msg)  { showToast('Please write your wish 💌'); msgEl.focus();  return; }
+
+  const wishes = getWishes();
+  wishes.unshift({
+    id   : Date.now(),
+    name,
+    msg,
+    time : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  });
+  saveWishes(wishes);
+
+  nameEl.value = '';
+  msgEl.value  = '';
+
+  renderWishes(wishes);
+  updateCounter(wishes.length);
+  showToast('Wish sent! 🎉❤️');
+  spawnBalloon(); spawnBalloon(); spawnBalloon();
+}
+
+const AVATAR_EMOJIS = ['🌸','🌺','💐','🌻','🦋','🌈','⭐','🌙','🎀','🍀'];
+
+function renderWishes(wishes) {
+  const grid  = document.getElementById('wish-grid');
+  const empty = document.getElementById('wishes-empty');
+
+  if (wishes.length === 0) {
+    grid.innerHTML = '';
+    grid.appendChild(empty);
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = wishes.map((w, i) => `
+    <div class="wish-card" style="animation-delay:${Math.min(i,8)*0.07}s">
+      <div class="wish-card-header">
+        <div class="wish-avatar">${AVATAR_EMOJIS[i % AVATAR_EMOJIS.length]}</div>
+        <span class="wish-sender-name">${escapeHTML(w.name)}</span>
+        <span class="wish-heart">❤️</span>
+      </div>
+      <p class="wish-text">"${escapeHTML(w.msg)}"</p>
+    </div>
+  `).join('');
+}
+
+function updateCounter(n) {
+  const el = document.getElementById('wish-count');
+  el.textContent = n;
+  el.classList.remove('tick');
+  void el.offsetWidth;
+  el.classList.add('tick');
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ============================================================
+   SCROLL REVEAL
+   ============================================================ */
+function initScrollReveal() {
+  const els = document.querySelectorAll('.reveal');
+  const io  = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  els.forEach(el => io.observe(el));
+}
+
+/* ============================================================
+   ALLOW UNLOCK IF ALREADY PAST TARGET
+   ============================================================ */
+// Also check once on page load (in case someone opens after midnight)
+if (CONFIG.forceUnlock || Date.now() >= UNLOCK_TIME) {
+  // Small delay so page can render first
+  setTimeout(triggerUnlock, 500);
+}
+</script>
+</body>
+</html>
